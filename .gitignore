@@ -52,3 +52,55 @@ CTestTestfile.cmake
 ## Nix
 
 /result*
+
+## Web/Mobile Modernization
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+.pnpm-debug.log*
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Build outputs
+dist/
+web/build/
+web/public/xmoto-web.*
+web/public/*.data
+backend/dist/
+backend/logs/
+backend/uploads/
+
+# Mobile platforms
+mobile/android/
+mobile/ios/
+mobile/.capacitor/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Emscripten
+.emscripten_cache/
+.emscripten_ports/
+
+# Testing
+coverage/
+.nyc_output/
+
+# Temporary
+*.tmp
+*.temp
+.cache/
+logs/

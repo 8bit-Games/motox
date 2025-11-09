@@ -1,0 +1,41 @@
+{
+  "name": "xmoto-mobile",
+  "version": "0.6.3",
+  "description": "X-Moto Mobile - iOS and Android apps",
+  "private": true,
+  "scripts": {
+    "sync": "cap sync",
+    "sync:ios": "cap sync ios",
+    "sync:android": "cap sync android",
+    "open:ios": "cap open ios",
+    "open:android": "cap open android",
+    "run:ios": "cap run ios",
+    "run:android": "cap run android",
+    "build:ios": "cap build ios",
+    "build:android": "cap build android",
+    "add:ios": "cap add ios",
+    "add:android": "cap add android",
+    "clean": "rm -rf android ios"
+  },
+  "keywords": [
+    "xmoto",
+    "mobile",
+    "capacitor",
+    "ios",
+    "android"
+  ],
+  "author": "X-Moto Team",
+  "license": "GPL-2.0-or-later",
+  "dependencies": {
+    "@capacitor/android": "^5.5.1",
+    "@capacitor/cli": "^5.5.1",
+    "@capacitor/core": "^5.5.1",
+    "@capacitor/ios": "^5.5.1",
+    "@capacitor/keyboard": "^5.0.6",
+    "@capacitor/splash-screen": "^5.0.6",
+    "@capacitor/status-bar": "^5.0.6"
+  },
+  "devDependencies": {
+    "@capacitor/assets": "^3.0.4"
+  }
+}

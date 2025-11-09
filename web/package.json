@@ -1,0 +1,58 @@
+{
+  "name": "xmoto-web",
+  "version": "0.6.3",
+  "description": "X-Moto Web - WebAssembly port of the physics-based motocross game",
+  "private": true,
+  "scripts": {
+    "build:wasm": "npm run build:wasm:release",
+    "build:wasm:debug": "npm run cmake:configure:debug && npm run cmake:build:debug",
+    "build:wasm:release": "npm run cmake:configure:release && npm run cmake:build:release",
+    "cmake:configure:debug": "mkdir -p build/debug && cd build/debug && emcmake cmake ../../emscripten -DCMAKE_BUILD_TYPE=Debug",
+    "cmake:configure:release": "mkdir -p build/release && cd build/release && emcmake cmake ../../emscripten -DCMAKE_BUILD_TYPE=Release",
+    "cmake:build:debug": "cd build/debug && emmake make -j$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)",
+    "cmake:build:release": "cd build/release && emmake make -j$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)",
+    "serve": "http-server public -p 8080 -c-1 --cors",
+    "dev": "npm run build:wasm:debug && npm run serve",
+    "start": "npm run serve",
+    "clean": "rm -rf build public/xmoto-web.* public/*.data",
+    "test": "echo 'No tests yet'",
+    "lint": "eslint src --ext .js,.ts,.tsx",
+    "format": "prettier --write 'src/**/*.{js,ts,tsx,json,css,md}'"
+  },
+  "keywords": [
+    "xmoto",
+    "game",
+    "webassembly",
+    "wasm",
+    "emscripten",
+    "physics",
+    "motocross"
+  ],
+  "author": "X-Moto Team",
+  "license": "GPL-2.0-or-later",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/xmoto/xmoto.git",
+    "directory": "web"
+  },
+  "bugs": {
+    "url": "https://github.com/xmoto/xmoto/issues"
+  },
+  "homepage": "https://xmoto.org",
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "@typescript-eslint/eslint-plugin": "^6.13.0",
+    "@typescript-eslint/parser": "^6.13.0",
+    "eslint": "^8.54.0",
+    "http-server": "^14.1.1",
+    "prettier": "^3.1.0",
+    "typescript": "^5.3.2"
+  },
+  "dependencies": {
+    "axios": "^1.6.2"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  }
+}
