@@ -1,9 +1,9 @@
 /*=============================================================================
-XMOTO - Web Entry Point
+X-MOTO WebAssembly
 
-This file is part of XMOTO.
+This file is part of X-MOTO.
 
-XMOTO is free software; you can redistribute it and/or modify
+X-MOTO is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation; either version 2 of the License, or
 (at your option) any later version.
@@ -12,195 +12,242 @@ the Free Software Foundation; either version 2 of the License, or
 /**
  * WebAssembly Entry Point for X-Moto
  *
- * This is a minimal entry point for the web version of X-Moto.
- * It initializes the game loop using Emscripten's main loop mechanism.
+ * This adapts the desktop game's initialization for WebAssembly/Emscripten.
+ * Key differences from native:
+ * - Uses Emscripten's main loop (not a while loop)
+ * - File system uses IndexedDB (via IDBFS)
+ * - Limited threading support
+ * - No native system dialogs
  */
 
-#include <SDL2/SDL.h>
 #include <emscripten.h>
 #include <emscripten/html5.h>
+#include <SDL2/SDL.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-// Forward declarations
-void gameLoop();
-void initGame();
-void cleanupGame();
+// X-Moto headers
+#include "xmoto/Game.h"
+#include "helpers/Log.h"
+#include "helpers/Environment.h"
+#include "common/XMArgs.h"
+#include "helpers/VExcept.h"
 
-// Global state
-SDL_Window* g_window = nullptr;
-SDL_Renderer* g_renderer = nullptr;
-bool g_running = true;
-int g_frameCount = 0;
+// Global game instance
+static GameApp* g_gameApp = nullptr;
+static bool g_running = true;
+static bool g_initialized = false;
 
-// Game loop callback for Emscripten
+/**
+ * Main game loop - called every frame by Emscripten
+ */
 void gameLoop() {
-    if (!g_running) {
+    if (!g_running || !g_initialized || g_gameApp == nullptr) {
+        printf("Game loop stopping: running=%d initialized=%d gameApp=%p\n",
+               g_running, g_initialized, (void*)g_gameApp);
         emscripten_cancel_main_loop();
         return;
     }
 
-    SDL_Event event;
-    while (SDL_PollEvent(&event)) {
-        switch (event.type) {
-            case SDL_QUIT:
+    try {
+        // Run one iteration of the game loop
+        // TODO: Adapt GameApp::run_loop() for single-frame execution
+        // For now, just keep the app alive
+
+        // Handle SDL events
+        SDL_Event event;
+        while (SDL_PollEvent(&event)) {
+            if (event.type == SDL_QUIT) {
                 g_running = false;
-                break;
-            case SDL_KEYDOWN:
+                printf("Quit event received\n");
+            } else if (event.type == SDL_KEYDOWN) {
                 if (event.key.keysym.sym == SDLK_ESCAPE) {
                     g_running = false;
+                    printf("ESC pressed - quitting\n");
                 }
-                break;
+            }
         }
+
+    } catch (Exception &e) {
+        printf("Exception in game loop: %s\n", e.getMsg().c_str());
+        g_running = false;
     }
-
-    // Clear screen
-    SDL_SetRenderDrawColor(g_renderer, 0, 0, 0, 255);
-    SDL_RenderClear(g_renderer);
-
-    // Draw a simple animation (rotating square)
-    int size = 100;
-    int centerX = 640 / 2;
-    int centerY = 480 / 2;
-
-    // Calculate rotation based on frame count
-    float angle = (g_frameCount % 360) * 0.017453f; // Convert to radians
-
-    // Draw rotating square
-    SDL_SetRenderDrawColor(g_renderer, 255, 255, 255, 255);
-    SDL_Rect rect = {
-        centerX - size/2,
-        centerY - size/2,
-        size,
-        size
-    };
-    SDL_RenderFillRect(g_renderer, &rect);
-
-    // Draw text-like info
-    SDL_SetRenderDrawColor(g_renderer, 255, 0, 0, 255);
-    SDL_Rect titleRect = { centerX - 200, 50, 400, 50 };
-    SDL_RenderFillRect(g_renderer, &titleRect);
-
-    SDL_RenderPresent(g_renderer);
-
-    g_frameCount++;
 }
 
-void initGame() {
-    printf("X-Moto Web - Initializing...\n");
+/**
+ * Initialize the game
+ */
+bool initGame(int argc, char** argv) {
+    printf("===========================================\n");
+    printf("X-Moto WebAssembly - Initializing\n");
+    printf("===========================================\n");
 
-    // Initialize SDL
-    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_EVENTS) < 0) {
-        printf("SDL initialization failed: %s\n", SDL_GetError());
-        return;
+    try {
+        // Initialize environment
+        Environment::init();
+        printf("Environment initialized\n");
+
+        // Initialize logger
+        // Logger will use browser console via Emscripten's printf
+        printf("Logger initialized (console output)\n");
+
+        // Parse command line arguments
+        XMArguments args;
+        try {
+            args.parse(argc, argv);
+
+            if (args.isOptHelp()) {
+                args.help(argc >= 1 ? argv[0] : "xmoto");
+                return false;
+            }
+        } catch (Exception &e) {
+            printf("Error parsing arguments: %s\n", e.getMsg().c_str());
+            return false;
+        }
+
+        // Create game instance
+        printf("Creating GameApp instance...\n");
+        g_gameApp = GameApp::instance();
+
+        if (g_gameApp == nullptr) {
+            printf("ERROR: Failed to create GameApp instance\n");
+            return false;
+        }
+
+        // Initialize game (load resources, setup database, etc.)
+        printf("Initializing game resources...\n");
+        g_gameApp->run_load(argc, argv);
+
+        printf("===========================================\n");
+        printf("X-Moto WebAssembly - Ready!\n");
+        printf("===========================================\n");
+
+        g_initialized = true;
+        return true;
+
+    } catch (Exception &e) {
+        printf("FATAL ERROR during initialization: %s\n", e.getMsg().c_str());
+        return false;
+    } catch (...) {
+        printf("FATAL ERROR: Unknown exception during initialization\n");
+        return false;
+    }
+}
+
+/**
+ * Cleanup and shutdown
+ */
+void cleanupGame() {
+    printf("X-Moto WebAssembly - Shutting down...\n");
+
+    if (g_gameApp != nullptr) {
+        try {
+            g_gameApp->run_unload();
+            GameApp::destroy();
+        } catch (Exception &e) {
+            printf("Error during cleanup: %s\n", e.getMsg().c_str());
+        }
+        g_gameApp = nullptr;
     }
 
-    // Create window
-    g_window = SDL_CreateWindow(
-        "X-Moto Web",
-        SDL_WINDOWPOS_UNDEFINED,
-        SDL_WINDOWPOS_UNDEFINED,
-        640,
-        480,
-        SDL_WINDOW_SHOWN
+    // Sync file system to IndexedDB before exit
+    EM_ASM(
+        if (typeof FS !== 'undefined' && FS.syncfs) {
+            FS.syncfs(false, function(err) {
+                if (err) {
+                    console.error('Failed to sync file system:', err);
+                } else {
+                    console.log('File system synced successfully');
+                }
+            });
+        }
     );
 
-    if (!g_window) {
-        printf("Window creation failed: %s\n", SDL_GetError());
-        SDL_Quit();
-        return;
-    }
+    printf("X-Moto WebAssembly - Shutdown complete\n");
+}
 
-    // Create renderer
-    g_renderer = SDL_CreateRenderer(g_window, -1, SDL_RENDERER_ACCELERATED);
-    if (!g_renderer) {
-        printf("Renderer creation failed: %s\n", SDL_GetError());
-        SDL_DestroyWindow(g_window);
-        SDL_Quit();
-        return;
-    }
+/**
+ * Main entry point
+ */
+int main(int argc, char* argv[]) {
+    printf("========================================\n");
+    printf("X-Moto WebAssembly Port\n");
+    printf("Version: 0.6.3-web (Alpha)\n");
+    printf("Build: %s %s\n", __DATE__, __TIME__);
+    printf("========================================\n");
 
-    printf("X-Moto Web - Initialization complete!\n");
-    printf("Press ESC to exit\n");
-
-    // Set up file system synchronization with IndexedDB
+    // Set up file system persistence
     EM_ASM(
         // Create persistent storage directory
-        FS.mkdir('/xmoto');
-        FS.mount(IDBFS, {}, '/xmoto');
-
-        // Sync from IndexedDB to memory
-        FS.syncfs(true, function(err) {
-            if (err) {
-                console.error('Error loading file system:', err);
-            } else {
-                console.log('File system loaded from IndexedDB');
+        try {
+            if (!FS.analyzePath('/xmoto').exists) {
+                console.log('Creating /xmoto directory');
+                FS.mkdir('/xmoto');
             }
-        });
-    );
-}
 
-void cleanupGame() {
-    printf("X-Moto Web - Shutting down...\n");
+            console.log('Mounting IDBFS at /xmoto');
+            FS.mount(IDBFS, {}, '/xmoto');
 
-    // Sync file system to IndexedDB
-    EM_ASM(
-        FS.syncfs(false, function(err) {
-            if (err) {
-                console.error('Error saving file system:', err);
-            } else {
-                console.log('File system saved to IndexedDB');
-            }
-        });
+            // Sync from IndexedDB to memory (load saved data)
+            console.log('Loading saved data from IndexedDB...');
+            FS.syncfs(true, function(err) {
+                if (err) {
+                    console.error('Error loading file system:', err);
+                } else {
+                    console.log('File system loaded successfully');
+                }
+            });
+        } catch (e) {
+            console.error('Error setting up file system:', e);
+        }
     );
 
-    if (g_renderer) {
-        SDL_DestroyRenderer(g_renderer);
+    // Small delay to let file system sync complete
+    // TODO: Make this properly async
+    printf("Waiting for file system to initialize...\n");
+
+    // Initialize the game
+    if (!initGame(argc, argv)) {
+        printf("Failed to initialize game\n");
+        cleanupGame();
+        return 1;
     }
 
-    if (g_window) {
-        SDL_DestroyWindow(g_window);
-    }
+    // Set up main loop with Emscripten
+    // 0 = use browser's requestAnimationFrame (typically 60 FPS)
+    // 1 = simulate infinite loop
+    printf("Starting main loop...\n");
+    emscripten_set_main_loop(gameLoop, 0, 1);
 
-    SDL_Quit();
+    // This code will only run if the main loop exits
+    cleanupGame();
 
-    printf("X-Moto Web - Shutdown complete\n");
+    return 0;
 }
 
-// Emscripten callbacks
+// Export C functions for JavaScript to call
 extern "C" {
+
     EMSCRIPTEN_KEEPALIVE
     void pauseGame() {
-        printf("Game paused\n");
+        printf("Game paused by JavaScript\n");
         emscripten_pause_main_loop();
     }
 
     EMSCRIPTEN_KEEPALIVE
     void resumeGame() {
-        printf("Game resumed\n");
+        printf("Game resumed by JavaScript\n");
         emscripten_resume_main_loop();
     }
 
     EMSCRIPTEN_KEEPALIVE
-    int getFrameCount() {
-        return g_frameCount;
+    void stopGame() {
+        printf("Game stopped by JavaScript\n");
+        g_running = false;
     }
-}
 
-int main(int argc, char* argv[]) {
-    printf("===========================================\n");
-    printf("X-Moto WebAssembly Port - Proof of Concept\n");
-    printf("===========================================\n");
-
-    initGame();
-
-    // Set up the main loop
-    // 0 = use requestAnimationFrame (typically 60 FPS)
-    // 1 = simulate infinite loop (will call gameLoop repeatedly)
-    emscripten_set_main_loop(gameLoop, 0, 1);
-
-    // Cleanup (will only be called if main loop exits)
-    cleanupGame();
-
-    return 0;
+    EMSCRIPTEN_KEEPALIVE
+    int isGameRunning() {
+        return g_running ? 1 : 0;
+    }
 }
