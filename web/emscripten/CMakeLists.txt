@@ -232,9 +232,10 @@ set(xmscene_src
     ${XMOTO_SRC_DIR}/xmscene/Camera.cpp
 )
 
-# Web-specific entry point
+# Web-specific entry point and compatibility layer
 set(web_src
     ${CMAKE_CURRENT_SOURCE_DIR}/web_main.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/web_stubs.cpp
 )
 
 # Create the executable
