@@ -19,12 +19,36 @@ with yourself and others, racing against the clock.
 
 Download and install the game from https://xmoto.org
 
+## 🆕 Web & Mobile Modernization
+
+X-Moto is being modernized to support web browsers and mobile devices!
+
+- 🌐 **Play in Browser** - WebAssembly port for all modern browsers
+- 📱 **Mobile Apps** - iOS and Android native applications
+- ☁️ **Cloud Services** - Online levels, highscores, and multiplayer
+
+**Get Started:**
+- [📋 Modernization Plan](MODERNIZATION_PLAN.md) - Complete strategy and roadmap
+- [🚀 Getting Started Guide](docs/guides/GETTING_STARTED.md) - Quick start for developers
+- [🌐 Web Build Guide](docs/guides/WEB_BUILD_GUIDE.md) - Build WebAssembly version
+- [☁️ Backend Setup Guide](docs/guides/BACKEND_SETUP_GUIDE.md) - Set up API server
+
+**Status:** Active Development | **Contributing:** We welcome contributions!
+
 # Building
+
+## Desktop (Native)
 See the wiki:
 - [Windows](https://github.com/xmoto/xmoto/wiki/Building-on-Windows)
 - [Linux](https://github.com/xmoto/xmoto/wiki/Building-on-Linux)
 - [macOS](https://github.com/xmoto/xmoto/wiki/Building-on-macOS)
 - [FreeBSD](https://github.com/xmoto/xmoto/wiki/Building-on-FreeBSD)
+
+## Web (WebAssembly)
+See the [Web Build Guide](docs/guides/WEB_BUILD_GUIDE.md)
+
+## Mobile (iOS/Android)
+See the [Mobile Build Guide](docs/guides/MOBILE_BUILD_GUIDE.md) (coming soon)
 
 # Basic Gameplay
 
